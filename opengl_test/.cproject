@@ -52,7 +52,7 @@
 									<listOptionValue builtIn="false" value="glut"/>
 									<listOptionValue builtIn="false" value="glu32"/>
 								</option>
-								<option id="gnu.cpp.link.option.paths.1291671830" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
+								<option id="gnu.cpp.link.option.paths.1291671830" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/libs/gl}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/libs/glm}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/libs/glut}&quot;"/>
