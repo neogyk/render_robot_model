@@ -40,6 +40,7 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 
 using namespace std;
 
+
 void ProcessMesh(aiMesh* mesh){
 	for(int i=0;i<mesh->mNumVertices;i++){
 		glm::vec3 vector;
