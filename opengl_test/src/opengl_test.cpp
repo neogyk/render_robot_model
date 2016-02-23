@@ -40,9 +40,6 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 
 using namespace std;
 
-
-
-
 void ProcessMesh(aiMesh* mesh){
 	for(int i=0;i<mesh->mNumVertices;i++){
 		glm::vec3 vector;
@@ -103,7 +100,6 @@ bool DoTheImportThing(const std::string& pFile)
     return false;
   }
   // Now we can access the file's contents.
-
 //  DoTheSceneProcessing( scene);
   aiNode* node = scene->mRootNode;
   //cout<<node;
@@ -113,12 +109,6 @@ bool DoTheImportThing(const std::string& pFile)
   // We're done. Everything will be cleaned up by the importer destructor
   return true;
 }
-
-
-
-
-
-
 
 //Screen properties
 //----------------------------------------------------------
@@ -154,9 +144,7 @@ glm::vec3 Position;
 
 //- Constant CPU data to send
 //-- Attributes data. Each line contains vertex data as "structure"
-
 // (really just a pair of 3D vectors) with two values.
-
 struct attributes {
 		GLfloat coord3d[3];
 		GLfloat v_color[3];
@@ -418,7 +406,7 @@ void free_resources() {
 //=============================================================================
 int main(int argc, char* argv[])
 {
-	DoTheImportThing(std::string("C:/Users/l.didukh/Desktop/C++/gameDev/workspace/opengl_test/Assets/Assets.dxf"));
+	DoTheImportThing(std::string("test_path.txt"));
 
 	glutInit(&argc, argv);
 	//	glutInitContextVersion(2,0);
