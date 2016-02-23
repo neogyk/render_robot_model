@@ -1,0 +1,22 @@
+/*
+ * Model.h
+ *
+ *  Created on: 19 февр. 2016 г.
+ *      Author: l.didukh
+ */
+
+#ifndef MODEL_H_
+#define MODEL_H_
+
+class Model {
+	public:
+		/*  Methods   */
+		Model(GLchar* path)
+		  {
+			this->loadModel(path);
+		  }
+	    void Draw(Shader shader);
+   virtual ~Model();
+};
+
+#endif /* MODEL_H_ */

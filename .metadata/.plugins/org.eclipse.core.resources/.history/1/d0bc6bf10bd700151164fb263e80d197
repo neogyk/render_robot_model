@@ -1,0 +1,17 @@
+/*
+ * Model.h
+ *
+ *  Created on: 19 февр. 2016 г.
+ *      Author: l.didukh
+ */
+
+#ifndef MODEL_H_
+#define MODEL_H_
+
+class Model {
+public:
+	Model();
+	virtual ~Model();
+};
+
+#endif /* MODEL_H_ */

@@ -15,6 +15,9 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 
 #include <math.h>
 
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
 
 #define _USE_MATH_DEFINES //In the name of Great and Powerful PI
 
@@ -35,6 +38,88 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+using namespace std;
+
+
+
+
+void ProcessMesh(aiMesh* mesh){
+	for(int i=0;i<mesh->mNumVertices;i++){
+		glm::vec3 vector;
+		vector.x = mesh->mVertices[i].x;
+		vector.y = mesh->mVertices[i].y;
+		vector.z = mesh->mVertices[i].z;
+		cout<<vector.x<<vector.y<<vector.z<<endl;
+
+	}
+
+}
+
+/*
+aiNode* assetRootNode = scene->mRootNode;
+  for(int i=0;i<assetRootNode->mNumMeshes;++i){
+  		  std::cout<<i;
+  		  aiMesh* mesh = scene->mMeshes[assetRootNode->mMeshes[i]];
+  		  std::cout<<mesh;
+
+  	  }
+
+*/
+ void ProcessNode(aiNode* node,const aiScene* scene){
+	for(unsigned int i=0;i<node->mNumMeshes;++i){
+		cout<<node->mNumMeshes;
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+		//cout<<mesh;
+		//cout<<mesh->mFaces;
+		ProcessMesh(mesh);
+	}
+	for(unsigned int j=0;j<node->mNumChildren;j++){
+		ProcessNode(node->mChildren[j],scene);
+	}
+  }
+
+
+
+
+
+//----------------------------------------------------------
+bool DoTheImportThing(const std::string& pFile)
+{
+  // Create an instance of the Importer class
+  Assimp::Importer importer;
+  // And have it read the given file with some example postprocessing
+  // Usually - if speed is not the most important aspect for you - you'll
+  // propably to request more postprocessing than we do in this example.
+  const aiScene* scene = importer.ReadFile( pFile,
+        aiProcess_CalcTangentSpace       |
+        aiProcess_Triangulate            |
+        aiProcess_JoinIdenticalVertices  |
+        aiProcess_SortByPType);
+
+  // If the import failed, report it
+  if( !scene)
+  {
+//    DoTheErrorLogging( importer.GetErrorString());
+    return false;
+  }
+  // Now we can access the file's contents.
+
+//  DoTheSceneProcessing( scene);
+  aiNode* node = scene->mRootNode;
+  //cout<<node;
+  cout<<"meshes\n";
+  ProcessNode(node,scene);
+
+  // We're done. Everything will be cleaned up by the importer destructor
+  return true;
+}
+
+
+
+
+
+
+
 //Screen properties
 //----------------------------------------------------------
 int screen_width=800, screen_height=600;//Screen size properties
@@ -45,7 +130,6 @@ glm::mat4 view;
 glm::vec3 EyePosition = glm::vec3(0.0, 0.0, 0.0);
 
 //----------------------------------------------------------
-
 //- Cube state
 //-- Vertex data openGL buffer ID
 GLuint vbo_cube_attrib;
@@ -70,7 +154,9 @@ glm::vec3 Position;
 
 //- Constant CPU data to send
 //-- Attributes data. Each line contains vertex data as "structure"
+
 // (really just a pair of 3D vectors) with two values.
+
 struct attributes {
 		GLfloat coord3d[3];
 		GLfloat v_color[3];
@@ -217,7 +303,7 @@ void onReshape(int width, int height) {
 }
 
 //- Function for keys processing
-void Keyboard(unsigned char key, int x, int y) {
+void Do_movement(unsigned char key, int x, int y) {
     switch (key) {
         case 'q':
             exit(0);
@@ -332,6 +418,8 @@ void free_resources() {
 //=============================================================================
 int main(int argc, char* argv[])
 {
+	DoTheImportThing(std::string("C:/Users/l.didukh/Desktop/C++/gameDev/workspace/opengl_test/Assets/Assets.dxf"));
+
 	glutInit(&argc, argv);
 	//	glutInitContextVersion(2,0);
 
@@ -360,7 +448,7 @@ int main(int argc, char* argv[])
 	if(init_resources()) {
 		glutDisplayFunc(display);
 		glutReshapeFunc(onReshape);
-		glutKeyboardFunc(Keyboard);
+		glutKeyboardFunc(Do_movement);
 		glutTimerFunc(15, Timer, 1);
 		glutMainLoop();
 	}

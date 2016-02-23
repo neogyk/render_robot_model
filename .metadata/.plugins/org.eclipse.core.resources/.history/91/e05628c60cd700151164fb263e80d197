@@ -1,0 +1,18 @@
+/*
+ * Model.cpp
+ *
+ *  Created on: 19 февр. 2016 г.
+ *      Author: l.didukh
+ */
+
+#include "Model.h"
+
+Model::Model(GLchar* path) {
+	// TODO Auto-generated constructor stub
+	this->loadModel(path);
+}
+Model::void Draw(Shader shader){};
+Model::~Model() {
+	// TODO Auto-generated destructor stub
+}
+
