@@ -10,7 +10,8 @@ void print_log(GLuint);
 
 GLuint createShader(const char*, GLenum);
 GLuint createShaderProgram(const char *inVertexShaderFile,
-		const char *inFragmentShaderFile);
+		const char *inFragmentShaderFile,
+		GLuint &outVertexShaderID, GLuint &outFragmentShaderID);
 
 ////////////////////////////////////////////////////////////////////////////////
 #endif // SHADER_UTILS_H

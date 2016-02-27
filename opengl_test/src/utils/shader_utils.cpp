@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include <stdio.h> /*Used for fprintf*/
 #include <stdlib.h>
+#include <iostream>
 
 ////////////////////////////////////////////////////////////////////////////////
 //Store all the file's contents in memory, useful to pass shaders source code
@@ -46,7 +47,7 @@ void print_log(GLuint object) {
 	} else if(glIsProgram(object)) {
 		glGetProgramiv(object, GL_INFO_LOG_LENGTH, &log_length);
 	} else {
-		fprintf(stderr,"printlog: Not a shader or a program\n");
+		std::cout << "printlog: Not a shader or a program\n" << std::endl;
 		return;
 	}
 
@@ -58,39 +59,29 @@ void print_log(GLuint object) {
 		glGetProgramInfoLog(object, log_length, NULL, log);
 	}
 
-	fprintf(stderr, "%s", log);
+	std::cout << log << std::endl;
 	free(log);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Compile the shader from file 'filename', with error handling
-GLuint createShader(const char* filename, GLenum type) {
-	const GLchar* source = file_read(filename);
-	if (source == NULL) {
-		fprintf(stderr, "Error opening %s: ", filename); perror("");
+GLuint createShader(const char* inFilename, GLenum inType) {
+	const GLchar* theSource = file_read(inFilename);
+	if (theSource == NULL) {
+		std::cout << "Error opening file [" << inFilename << "]" << std::endl;
 		return 0;
 	}
 
-	GLuint res = glCreateShader(type);
-
-	const GLchar* sources[2] = {
-		#ifdef GL_ES_VERSION_2_0
-		"#version 100\n"
-		"#define GLES2\n",
-		#else
-		"#version 120\n",
-		#endif
-		source
-	};
-
-	glShaderSource(res, 2, sources, NULL);
-	free((void*)source);
+	GLuint res = glCreateShader(inType);
+	glShaderSource(res, 1, &theSource, NULL);
+	free((void*)theSource);
 
 	glCompileShader(res);
-	GLint compile_ok = GL_FALSE;
-	glGetShaderiv(res, GL_COMPILE_STATUS, &compile_ok);
-	if (compile_ok == GL_FALSE) {
-		fprintf(stderr, "%s:", filename);
+	GLint theCompileStatus = GL_FALSE;
+	glGetShaderiv(res, GL_COMPILE_STATUS, &theCompileStatus);
+	if (theCompileStatus == GL_FALSE) {
+		std::cout << "Error while compiling shader [" << inFilename << "]" <<
+				std::endl;
 		print_log(res);
 		glDeleteShader(res);
 		return 0;
@@ -118,7 +109,7 @@ GLuint createShaderProgram(const char *inVertexShaderFile,
 
 	GLint theLinkingSuccess = GL_FALSE;
 	glGetProgramiv(theProgramID, GL_LINK_STATUS, &theLinkingSuccess);
-	if(theLinkingSuccess == 0) {
+	if(theLinkingSuccess == GL_FALSE) {
 		fprintf(stderr, "Error while linking GLSL program");
 		print_log(theProgramID);
 		return 0;

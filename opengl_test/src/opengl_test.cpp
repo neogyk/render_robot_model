@@ -12,6 +12,8 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <vector>
+
 #include <iostream>
 
 #include <math.h>
@@ -37,32 +39,11 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <glm/gtx/string_cast.hpp>
+
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
-//------------------------------------------------------------------------------
-// GLUT RUNLOOP CALLBACKS
-//- Function for processing of screen size change event
-void glutCallbackOnWindowResize(int width, int height) {
-//	screen_width = width;
-//	screen_height = height;
-//	glViewport(0, 0, screen_width, screen_height);
-}
-
-//- Function for keys processing
-void glutCallbackOnKeyDown(unsigned char key, int x, int y) {
-//    switch (key) {
-//        case 'r':	EyePosition += glm::vec3(0.0, 0.1, 0.0);	break;
-//        case 'f':	EyePosition -= glm::vec3(0.0, 0.1, 0.0);	break;
-//        case 'w':	EyePosition += glm::vec3(0.0, 0.0, -0.1);	break;
-//        case 's':	EyePosition -= glm::vec3(0.0, 0.0, -0.1);	break;
-//        case 'a':	EyePosition += glm::vec3(-0.1, 0.0, 0.0);	break;
-//        case 'd':	EyePosition -= glm::vec3(-0.1, 0.0, 0.0);	break;
-//        case 'q':	exit(0);									break;
-//    }
-}
-
-//=============================================================================
 class Mesh {
 private:
 
@@ -78,6 +59,8 @@ private:
 	GLuint _coordinatesGLID;	// Coordinates
 	GLuint _colorGLID;			// Color
 
+	GLuint _dataVAOGLID;		// Data VAO
+
 	GLuint _indexesGLID;		// Indexes
 
 	//-- CODE
@@ -87,24 +70,29 @@ private:
 
 	GLuint _shaderProgramGLID;
 
+	//-- DRAW BINDING
+	GLuint _mvpUniformBindingGLID;
+
 	//- Methods
 	//-- Private methods
-	GLint getAttributeLocation(GLint inProgram, const char *inAttributeName) {
-		GLint theAttributeLocationID =
+	GLuint getAttributeLocation(GLint inProgram, const char *inAttributeName) {
+		GLuint theAttributeLocationID =
 				glGetAttribLocation(inProgram, inAttributeName);
-		if (theAttributeLocationID == -1) {
-			fprintf(stderr, "Could not bind attribute%s\n", inAttributeName);
+		if (glGetError() != GL_NO_ERROR) {
+			std::cout << "Could not bind attribute [" << inAttributeName << "]"
+					<< std::endl;
 			return -1;
 		}
 		return theAttributeLocationID;
 	}
 
-	GLint getUniformLocation(GLint inProgram, const char *inAttributeName) {
-		GLint theAttributeLocationID =
+	GLuint getUniformLocation(GLint inProgram, const char *inAttributeName) {
+		GLuint theAttributeLocationID =
 				glGetUniformLocation(inProgram, inAttributeName);
-		if (theAttributeLocationID == -1) {
-			fprintf(stderr, "Could not bind attribute%s\n", inAttributeName);
-			return -1;
+		if (glGetError() != GL_NO_ERROR) {
+			std::cout << "Could not bind attribute [" << inAttributeName << "]"
+					<< std::endl;
+			return GLuint(-1);
 		}
 		return theAttributeLocationID;
 	}
@@ -114,9 +102,9 @@ private:
 	{
 		GLuint theBufferID;
 		glGenBuffers(1, &theBufferID);
-		glBindBuffer(GL_ARRAY_BUFFER, theBufferID);
-		glBufferData(GL_ARRAY_BUFFER, inSize, inData, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(inTarget, theBufferID);
+		glBufferData(inTarget, inSize, inData, GL_STATIC_DRAW);
+		glBindBuffer(inTarget, 0);
 
 		return theBufferID;
 	}
@@ -144,28 +132,30 @@ private:
 
 public:
 	Mesh(const char *inModelFile) {
+
+		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		// Create vertex buffers data
 		_coordinatesData = new GLfloat[8 * 3];
 		setVector(_coordinatesData, 0, -1.0, -1.0,  1.0);
-		setVector(_coordinatesData, 0, 1.0, -1.0,  1.0);
-		setVector(_coordinatesData, 0, 1.0,  1.0,  1.0);
-		setVector(_coordinatesData, 0, -1.0,  1.0,  1.0);
+		setVector(_coordinatesData, 1, 1.0, -1.0,  1.0);
+		setVector(_coordinatesData, 2, 1.0,  1.0,  1.0);
+		setVector(_coordinatesData, 3, -1.0,  1.0,  1.0);
 
-		setVector(_coordinatesData, 0, -1.0, -1.0, -1.0);
-		setVector(_coordinatesData, 0, 1.0, -1.0, -1.0);
-		setVector(_coordinatesData, 0, 1.0,  1.0, -1.0);
-		setVector(_coordinatesData, 0, -1.0,  1.0, -1.0);
+		setVector(_coordinatesData, 4, -1.0, -1.0, -1.0);
+		setVector(_coordinatesData, 5, 1.0, -1.0, -1.0);
+		setVector(_coordinatesData, 6, 1.0,  1.0, -1.0);
+		setVector(_coordinatesData, 7, -1.0,  1.0, -1.0);
 
 		_colorData = new GLfloat[8 * 3];
 		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
-		setVector(_colorData, 0, 0.25, 1.0, 0.25);
-		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
-		setVector(_colorData, 0, 1.0, 0.25, 0.25);
+		setVector(_colorData, 1, 0.25, 1.0, 0.25);
+		setVector(_colorData, 2, 1.0 , 1.0 , 1.0);
+		setVector(_colorData, 3, 1.0, 0.25, 0.25);
 
-		setVector(_colorData, 0, 0.25, 0.25, 0.25);
-		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
-		setVector(_colorData, 0, 0.25, 0.25, 0.25);
-		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
+		setVector(_colorData, 4, 0.25, 0.25, 0.25);
+		setVector(_colorData, 5, 1.0 , 1.0 , 1.0);
+		setVector(_colorData, 6, 0.25, 0.25, 0.25);
+		setVector(_colorData, 7, 1.0 , 1.0 , 1.0);
 
 		_indexesData = new GLushort[36];
 		setIndexBlock(_indexesData, 0, 0, 1, 2, 2, 3, 0);
@@ -175,6 +165,7 @@ public:
 		setIndexBlock(_indexesData, 4, 4, 0, 3, 3, 7, 4);
 		setIndexBlock(_indexesData, 5, 1, 5, 6, 6, 2, 1);
 
+		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		// Create buffers
 		_coordinatesGLID = createBuffer(GL_ARRAY_BUFFER,
 				_coordinatesData, 8 * 3 * sizeof(GLfloat));
@@ -183,70 +174,83 @@ public:
 				_colorData, 8 * 3 * sizeof(GLfloat));
 
 		_indexesGLID = createBuffer(GL_ELEMENT_ARRAY_BUFFER,
-				_indexesData, 8 * 3 * sizeof(GLfloat));
+				_indexesData, 36 * sizeof(GLushort));
 
+		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		// Create program
 		_shaderProgramGLID = createShaderProgram(
 				"shaders/triangle.v.glsl", "shaders/triangle.f.glsl",
 				_vertexShaderGLID, _fragmentShaderGLID);
 
-		// Get program binding points
-		_attribute_coord3d = getAttributeLocation(_materialProgram, "coord3d");
-		_attribute_v_color = getAttributeLocation(_materialProgram, "v_color");
+		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+		// Generate VAO
+		glGenVertexArrays(1, &_dataVAOGLID);
+		glBindVertexArray(_dataVAOGLID);
 
-		_uniform_fade = getUniformLocation(_materialProgram, "fade");
-		_uniform_mvp = getUniformLocation(_materialProgram, "mvp");
+		GLuint theLocation;
+
+		theLocation = getAttributeLocation(_shaderProgramGLID, "coord3d");
+		glBindBuffer(GL_ARRAY_BUFFER, _coordinatesGLID);
+		glEnableVertexAttribArray(theLocation);
+		glVertexAttribPointer(
+		/*index */		theLocation,
+		/*size */		(GLint)3,
+		/*type */		(GLenum)GL_FLOAT,
+		/*normalized */	(GLboolean)GL_FALSE,
+		/*stride */		(GLsizei)0,
+		/*offset */		(const GLvoid*)0
+		);
+
+		theLocation = getAttributeLocation(_shaderProgramGLID, "v_color");
+		glBindBuffer(GL_ARRAY_BUFFER, _colorGLID);
+		glEnableVertexAttribArray(theLocation);
+		glVertexAttribPointer(
+		/*index */		theLocation,
+		/*size */		(GLint)3,
+		/*type */		(GLenum)GL_FLOAT,
+		/*normalized */	(GLboolean)GL_FALSE,
+		/*stride */		(GLsizei)0,
+		/*offset */		(const GLvoid*)0
+		);
+
+		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+		// Create program
+		_mvpUniformBindingGLID = getUniformLocation(_shaderProgramGLID, "mvp");
 	}
 
 	virtual ~Mesh() {
-		glDeleteProgram(_materialProgram);
+		glDeleteBuffers(1, &_coordinatesGLID);
+		glDeleteBuffers(1, &_colorGLID);
+
+		glDeleteBuffers(1, &_indexesGLID);
+
+		//TODO: Maybe, remove shader program too
+		glDeleteProgram(_shaderProgramGLID);
+
+		glDeleteVertexArrays(1, &_dataVAOGLID);
 	}
 
-	void draw() {
-		// Update MVP matrix in uniform
-		glUniformMatrix4fv(_uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+	void draw(const glm::mat4 &inProjection, const glm::mat4 &inView,
+			const glm::mat4 &inModel)
+	{
+		float angle_anim = glutGet(GLUT_ELAPSED_TIME) / 1000.0 * (M_PI/4);
+		glm::vec3 axis_z(0, 0, 1), axis_y(0, 1, 0), axis_x(1, 0, 0);
+		glm::mat4 anim = glm::rotate(glm::mat4(1.0f), angle_anim, axis_x);
 
-		//-------- DRAWING
-		// Bind PROGRAMM
-		glUseProgram(_materialProgram);
+		glm::mat4 theMVP = inProjection * inView * inModel * anim;
 
-		//---------------------------------------
-		// Bind DATA
-		glBindBuffer(GL_ARRAY_BUFFER, _vbo_cube_attrib);
+		glUseProgram(_shaderProgramGLID);
 
-		glEnableVertexAttribArray(_attribute_coord3d);
-		glUniform1f(_uniform_fade, 1.0f);
+		glUniformMatrix4fv(_mvpUniformBindingGLID, 1, GL_FALSE,
+				glm::value_ptr(theMVP));
 
-		//--------------------------------------
-		//TODO: Use VAO here!
-		//Bind ATTRIBUTES INFO (as in VAO)
-		glVertexAttribPointer(
-			_attribute_coord3d, // attribute
-			3,                 // number of elements per vertex, here (x, y, z)
-			GL_FLOAT,          // the type of each element
-			GL_FALSE,          // take our values as-is
-			sizeof(struct attributes),
-			0
-		);
+		glBindVertexArray(_dataVAOGLID);
 
-		glEnableVertexAttribArray(_attribute_v_color);
-		glVertexAttribPointer(
-			_attribute_v_color, // attribute
-			3,                 // number of elements per vertex, here (r,g,b)
-			GL_FLOAT,          // the type of each element
-			GL_FALSE,          // take our values as-is
-			sizeof(struct attributes),
-			(GLvoid*) offsetof(struct attributes, v_color)  // offset of the first element
-		);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesGLID);
 
-		//------------------- DRAW CALL
-		//Bind index array
-		glDrawElements(GL_TRIANGLES, (_iboSize/sizeof(GLushort)),
-				GL_UNSIGNED_SHORT, 0);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
 
-		//------------ UNBIND ATTRIBUTES
-		glDisableVertexAttribArray(_attribute_coord3d);
-		glDisableVertexAttribArray(_attribute_v_color);
+		glBindVertexArray(0);
 	}
 };
 
@@ -263,7 +267,6 @@ private:
 	struct Camera {
 		glm::mat4 projection;
 		glm::mat4 view;
-		glm::vec3 eyePosition = glm::vec3(0.0, 0.0, 0.0);
 	};
 
 	//-- Model data
@@ -275,12 +278,6 @@ private:
 	};
 
 	//- State
-
-	//-- Frade (alpha) for the Cube
-	GLint _uniform_fade;
-	GLint _uniform_mvp;
-
-
 	ViewPortInfo _viewPort;
 	Camera _mainCamera;
 
@@ -302,65 +299,89 @@ public:
 			0.1f,										//Near
 			10.0f										//Far
 		);
+
+		glm::vec3 EyePosition = glm::vec3(0.0, 0.0, 0.0);
+		_mainCamera.view = glm::lookAt(
+			EyePosition,								//eye
+			EyePosition + glm::vec3(0.0, 0.0, -1.0),	//center
+			glm::vec3(0.0, 1.0, 0.0)					//up
+		);
 	}
 
 	void loadMeshFromFile(const char *inMeshName, const char *inFilePath) {
-		//TODO: Implement [createModelForMesh] method:
-		//1. Load vertex data from mesh file.
-		//2. Create mesh object and setup it's info from loaded data.
-		//3. .
+		_meshes.push_back(new Mesh(inFilePath));
 	}
 
 	void createModelForMesh(const char *inMeshName,
 			const glm::mat4 &inCoordinateSystem)
 	{
-		//TODO: Implement [createModelForMesh] method:
-		//1. Find mesh by name.
-		//2. Create model, set its mesh from found mesh.
-		//3. Set coordiante system for model.
+		Model *theModel = new Model();
+		theModel->coordinateSystem = inCoordinateSystem;
+		theModel->mesh = _meshes[0];
+
+		_models.push_back(theModel);
 	}
 
 	void draw() {
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-
 		for (size_t theIndex = 0, theSize = _models.size(); theIndex < theSize;
 				++theIndex)
 		{
 			Model *theModel = _models[theIndex];
-
-			//TODO: Use this data for local coordinate system
-
-//			// ANIMATION MATRIX - MOVE TO MODEL COORDINATES SYSTEM
-//			float angle_anim = glutGet(GLUT_ELAPSED_TIME) / 1000.0 * (M_PI/4);
-//			glm::vec3 axis_z(0, 0, 1);
-//			glm::vec3 axis_y(0, 1, 0);
-//			glm::vec3 axis_x(1, 0, 0);
-//			anim = glm::rotate(glm::mat4(1.0f), angle_anim, axis_x);
-//
-//			// MODEL MATRIX - SAME AS ANIM MATRIX
-//			model = glm::translate(glm::mat4(1.0f), Position);
-//			mvp = projection * view * model * anim;
-
-			//TODO: Maybe pass here coordinate system data
-			theModel->mesh->draw();
+			theModel->mesh->draw(_mainCamera.projection, _mainCamera.view,
+					theModel->coordinateSystem);
 		}
 
 		glutSwapBuffers();
 	}
 };
 
-//=============================================================================
+
+////////////////////////////////////////////////////////////////////////////////
+Scene *gScene = NULL;
+
+// GLUT RUNLOOP CALLBACKS
+//-
+void glutOnTimer(int value) {
+	glutPostRedisplay();
+	glutTimerFunc(12, glutOnTimer, 1);
+}
+
+void glutOnDisplay() {
+	gScene->draw();
+}
+
+//- Function for processing of screen size change event
+void glutCallbackOnWindowResize(int width, int height) {
+//	screen_width = width;
+//	screen_height = height;
+//	glViewport(0, 0, screen_width, screen_height);
+}
+
+//- Function for keys processing
+void glutCallbackOnKeyDown(unsigned char key, int x, int y) {
+//    switch (key) {
+//        case 'r':	EyePosition += glm::vec3(0.0, 0.1, 0.0);	break;
+//        case 'f':	EyePosition -= glm::vec3(0.0, 0.1, 0.0);	break;
+//        case 'w':	EyePosition += glm::vec3(0.0, 0.0, -0.1);	break;
+//        case 's':	EyePosition -= glm::vec3(0.0, 0.0, -0.1);	break;
+//        case 'a':	EyePosition += glm::vec3(-0.1, 0.0, 0.0);	break;
+//        case 'd':	EyePosition -= glm::vec3(-0.1, 0.0, 0.0);	break;
+//        case 'q':	exit(0);									break;
+//    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[]) {
-	// CREATE WINDOW (USING GLUT)
+	// Create window
 	glutInit(&argc, argv);
-	//	glutInitContextVersion(2,0);
 
 	glutInitDisplayMode(GLUT_RGBA|GLUT_ALPHA|GLUT_DOUBLE|GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
 	glutCreateWindow("Modern OpenGL");
 
-	// INITIALIZE GLEW
+	// Initialize GLEW
 	GLenum glew_status = glewInit();
 	if(glew_status != GLEW_OK) {
 		fprintf(stderr, "Error: %s\n",glewGetErrorString(glew_status));
@@ -372,19 +393,29 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	// SETUP GL CONTEXT
+	// Setup GL context
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
-	//glClearColor(0.0, 0.0, 0.0, 1.0);
 
-	// SETUP GLEW RUNLOOP CALLBACK
-	glutDisplayFunc(display);
+	gScene = new Scene();
+	gScene->loadMeshFromFile("test_mesh", "...");
+
+	double x = sinf(glutGet(GLUT_ELAPSED_TIME) / 1000.0) / 10.0 * (2*M_PI);
+	double y = cosf(glutGet(GLUT_ELAPSED_TIME) / 1000.0) / 10.0 * (2*M_PI);
+	gScene->createModelForMesh("test_mesh",
+			glm::translate(glm::mat4(1.0f), glm::vec3(x, y, -5)));
+
+	// Setup GLEW runloop callback
+	glutDisplayFunc(glutOnDisplay);
 	glutReshapeFunc(glutCallbackOnWindowResize);
 	glutKeyboardFunc(glutCallbackOnKeyDown);
+	glutTimerFunc(12, glutOnTimer, 1);
 
 	// START MAIN LOOP
 	glutMainLoop();
+
+	delete gScene;
 
 	return EXIT_SUCCESS;
 }
