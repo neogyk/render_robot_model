@@ -1,9 +1,17 @@
-#version 330
+#version 110
 
-in vec3 coord3d;
-in vec3 v_color;
+#if __VERSION__ < 130
+#define IN attribute
+#define OUT varying
+#else
+#define IN in
+#define OUT out
+#endif
 
-out vec3 f_color;
+IN vec3 coord3d;
+IN vec3 v_color;
+
+OUT vec3 f_color;
 
 uniform mat4 mvp;
 
