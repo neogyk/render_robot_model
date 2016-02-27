@@ -8,6 +8,7 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
          —коро перенесу это все с глута на чистые иксы, будет проще
 */
 
+////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,9 +21,7 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 #include <assimp/postprocess.h>     // Post processing flags
 
 #define _USE_MATH_DEFINES //In the name of Great and Powerful PI
-
 #define M_PI		3.14159265358979323846
-
 
 //Set directive of preprocessor
 //GLEW
@@ -40,118 +39,42 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 
 using namespace std;
 
-
-void ProcessMesh(aiMesh* mesh){
-	for(int i=0;i<mesh->mNumVertices;i++){
-		glm::vec3 vector;
-		vector.x = mesh->mVertices[i].x;
-		vector.y = mesh->mVertices[i].y;
-		vector.z = mesh->mVertices[i].z;
-		cout<<vector.x<<vector.y<<vector.z<<endl;
-
-	}
-
+////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+// GLUT RUNLOOP CALLBACKS
+//- Function for processing of screen size change event
+void glutCallbackOnWindowResize(int width, int height) {
+//	screen_width = width;
+//	screen_height = height;
+//	glViewport(0, 0, screen_width, screen_height);
 }
 
-/*
-aiNode* assetRootNode = scene->mRootNode;
-  for(int i=0;i<assetRootNode->mNumMeshes;++i){
-  		  std::cout<<i;
-  		  aiMesh* mesh = scene->mMeshes[assetRootNode->mMeshes[i]];
-  		  std::cout<<mesh;
-
-  	  }
-
-*/
- void ProcessNode(aiNode* node,const aiScene* scene){
-	for(unsigned int i=0;i<node->mNumMeshes;++i){
-		cout<<node->mNumMeshes;
-		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		//cout<<mesh;
-		//cout<<mesh->mFaces;
-		ProcessMesh(mesh);
-	}
-	for(unsigned int j=0;j<node->mNumChildren;j++){
-		ProcessNode(node->mChildren[j],scene);
-	}
-  }
-
-
-
-
-
-//----------------------------------------------------------
-bool DoTheImportThing(const std::string& pFile)
-{
-  // Create an instance of the Importer class
-  Assimp::Importer importer;
-  // And have it read the given file with some example postprocessing
-  // Usually - if speed is not the most important aspect for you - you'll
-  // propably to request more postprocessing than we do in this example.
-  const aiScene* scene = importer.ReadFile( pFile,
-        aiProcess_CalcTangentSpace       |
-        aiProcess_Triangulate            |
-        aiProcess_JoinIdenticalVertices  |
-        aiProcess_SortByPType);
-
-  // If the import failed, report it
-  if( !scene)
-  {
-//    DoTheErrorLogging( importer.GetErrorString());
-    return false;
-  }
-  // Now we can access the file's contents.
-//  DoTheSceneProcessing( scene);
-  aiNode* node = scene->mRootNode;
-  //cout<<node;
-  cout<<"meshes\n";
-  ProcessNode(node,scene);
-
-  // We're done. Everything will be cleaned up by the importer destructor
-  return true;
+//- Function for keys processing
+void glutCallbackOnKeyDown(unsigned char key, int x, int y) {
+//    switch (key) {
+//        case 'r':	EyePosition += glm::vec3(0.0, 0.1, 0.0);	break;
+//        case 'f':	EyePosition -= glm::vec3(0.0, 0.1, 0.0);	break;
+//        case 'w':	EyePosition += glm::vec3(0.0, 0.0, -0.1);	break;
+//        case 's':	EyePosition -= glm::vec3(0.0, 0.0, -0.1);	break;
+//        case 'a':	EyePosition += glm::vec3(-0.1, 0.0, 0.0);	break;
+//        case 'd':	EyePosition -= glm::vec3(-0.1, 0.0, 0.0);	break;
+//        case 'q':	exit(0);									break;
+//    }
 }
 
-//Screen properties
-//----------------------------------------------------------
-int screen_width=800, screen_height=600;//Screen size properties
-
-GLint attribute_coord3d, attribute_v_color;
-
-glm::mat4 view;
-glm::vec3 EyePosition = glm::vec3(0.0, 0.0, 0.0);
-
-//----------------------------------------------------------
-//- Cube state
-//-- Vertex data openGL buffer ID
-GLuint vbo_cube_attrib;
-
-//-- Index data openGL buffer ID
-GLuint ibo_cube_elements;
-
-//-- Frade (alpha) for the Cube
-GLint uniform_fade;
-
-//-- ID for MVP matrix
-GLint uniform_mvp;
-
-//--
-GLint uniform_m_transform;
-
-//-- Shader program ID
-GLuint program;
-
-//-- Cude position
-glm::vec3 Position;
-
-//- Constant CPU data to send
-//-- Attributes data. Each line contains vertex data as "structure"
-// (really just a pair of 3D vectors) with two values.
-struct attributes {
+//=============================================================================
+class Mesh {
+private:
+	//---------------------------------------------
+	//- Constant CPU data to send
+	//-- Attributes data. Each line contains vertex data as "structure"
+	// (really just a pair of 3D vectors) with two values.
+	struct attributes {
 		GLfloat coord3d[3];
 		GLfloat v_color[3];
-};
+	};
 
-attributes cube_attributes[8] = {
+	attributes cube_attributes[8] = {
 		// front
 		{{-1.0, -1.0,  1.0}, {1.0 , 1.0 , 1.0 }},
 		{{ 1.0, -1.0,  1.0}, {0.25, 1.0, 0.25}},
@@ -164,259 +87,253 @@ attributes cube_attributes[8] = {
 		{{-1.0,  1.0, -1.0}, {1.0 , 1.0 , 1.0 }},
 	};
 
-//-- Index data. Each line contains three indexes of vertex, that constructs a
-// triangle. So, one line = one triangle
-GLushort cube_elements[36] = {
-	    // front
-	    0, 1, 2,
-	    2, 3, 0,
-	    // top
-	    3, 2, 6,
-	    6, 7, 3,
-	    // back
-	    7, 6, 5,
-	    5, 4, 7,
-	    // bottom
-	    4, 5, 1,
-	    1, 0, 4,
-	    // left
-	    4, 0, 3,
-	    3, 7, 4,
-	    // right
-	    1, 5, 6,
-	    6, 2, 1
-	  };
+	// Index data. Each line contains three indexes of vertex, that constructs a
+	// triangle. So, one line = one triangle
+	GLushort cube_elements[36] = {
+		/*front*/	0, 1, 2, 2, 3, 0,
+		/*top*/		3, 2, 6, 6, 7, 3,
+		/*back*/	7, 6, 5, 5, 4, 7,
+		/*bottom*/	4, 5, 1, 1, 0, 4,
+		/*left*/	4, 0, 3, 3, 7, 4,
+		/*right*/	1, 5, 6, 6, 2, 1
+	};
+	//---------------------------------------------
 
-//-- Helper
-bool IsCreated = false;
+	GLuint _materialProgram;
 
-//- Uniform data to send
-//-- Transformation matrixes (for cube model)
-glm::mat4 model, projection, mvp;
+	//Shader attributes location
+	GLint _attribute_coord3d;
+	GLint _attribute_v_color;
 
-//-- Animation matrix (extra transform)
-glm::mat4 anim;
+	//-- Frade (alpha) for the Cube
+	GLint _uniform_fade;
+	GLint _uniform_mvp;
 
-//----------------------------------------------------------
-///GLUT functions
-void display() {
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	glUseProgram(program);
+	GLuint _vbo_cube_attrib;
+	GLuint _ibo_cube_elements;
 
-	// Cube.visualize
-	if(!IsCreated) return;
+	GLuint _iboSize;
 
-	//Identity matrix
-	model = glm::translate(glm::mat4(1.0f), Position);
+	//- Methods
+	//-- Private methods
+	GLint getAttributeLocation(GLint inProgram, const char *inAttributeName) {
+		GLint theAttributeLocationID =
+				glGetAttribLocation(inProgram, inAttributeName);
+		if (theAttributeLocationID == -1) {
+			fprintf(stderr, "Could not bind attribute%s\n", inAttributeName);
+			return -1;
+		}
+		return theAttributeLocationID;
+	}
 
-	projection = glm::perspective(
-		45.0f,                              //FOV
-		1.0f*screen_width/screen_height,    //Aspect ratio
-		0.1f,                               //Near
-		10.0f                               //Far
-	);
+	GLint getUniformLocation(GLint inProgram, const char *inAttributeName) {
+		GLint theAttributeLocationID =
+				glGetUniformLocation(inProgram, inAttributeName);
+		if (theAttributeLocationID == -1) {
+			fprintf(stderr, "Could not bind attribute%s\n", inAttributeName);
+			return -1;
+		}
+		return theAttributeLocationID;
+	}
 
-	float angle_anim = glutGet(GLUT_ELAPSED_TIME) / 1000.0 * (M_PI/4);
-	glm::vec3 axis_z(0, 0, 1), axis_y(0, 1, 0), axis_x(1, 0, 0);
-	anim = glm::rotate(glm::mat4(1.0f), angle_anim, axis_x);
+	GLuint createBuffer(GLenum inTarget, const GLvoid *inData,
+			GLsizeiptr inSize)
+	{
+		GLuint theBufferID;
+		glGenBuffers(1, &theBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, theBufferID);
+		glBufferData(GL_ARRAY_BUFFER, inSize, inData, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	mvp = projection * view * model * anim;
+		return theBufferID;
+	}
 
-	glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+	void initModel(const char *inVertexShaderFile,
+			const char *inFragmentShaderFile)
+	{
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_cube_attrib);
+	}
 
-	glEnableVertexAttribArray(attribute_coord3d);
-	glUniform1f(uniform_fade, 1.0f);
+public:
+	Mesh(const char *inModelFile) {
+		const char *theVertexShaderPath = "shaders/triangle.v.glsl";
+		const char *theFragmentShaderPath = "shaders/triangle.f.glsl";
 
-	// Works without using VAO
-	///Describe our vertices array to OpenGL (it can't guess its format automatically)
-	glVertexAttribPointer(
-		attribute_coord3d, // attribute
-		3,                 // number of elements per vertex, here (x, y, z)
-		GL_FLOAT,          // the type of each element
-		GL_FALSE,          // take our values as-is
-		sizeof(struct attributes),
-		0
-	);
+		// Create program
+		_materialProgram =
+				createShaderProgram(theVertexShaderPath, theFragmentShaderPath);
 
-	glEnableVertexAttribArray(attribute_v_color);
-	glVertexAttribPointer(
-		attribute_v_color, // attribute
-		3,                 // number of elements per vertex, here (r,g,b)
-		GL_FLOAT,          // the type of each element
-		GL_FALSE,          // take our values as-is
-		sizeof(struct attributes),
-		(GLvoid*) offsetof(struct attributes, v_color)  // offset of the first element
-	);
+		// Get program binding points
+		_attribute_coord3d = getAttributeLocation(_materialProgram, "coord3d");
+		_attribute_v_color = getAttributeLocation(_materialProgram, "v_color");
 
-	//Bind index array
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_elements);
-	int size;  glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+		_uniform_fade = getUniformLocation(_materialProgram, "fade");
+		_uniform_mvp = getUniformLocation(_materialProgram, "mvp");
 
-	//>>> Draw
-	glDrawElements(GL_TRIANGLES, (size/sizeof(GLushort)), GL_UNSIGNED_SHORT, 0);
+		// Create buffers
+		_vbo_cube_attrib = createBuffer(GL_ARRAY_BUFFER,
+				cube_attributes, sizeof(cube_attributes));
+		_ibo_cube_elements = createBuffer(GL_ELEMENT_ARRAY_BUFFER,
+				cube_elements, sizeof(cube_elements));
+	}
 
-	glDisableVertexAttribArray(attribute_coord3d);
-	glDisableVertexAttribArray(attribute_v_color);
+	virtual ~Mesh() {
+		glDeleteProgram(_materialProgram);
+	}
 
-	//Swap buffer
-	glutSwapBuffers();
-}
+	void draw() {
+		// Update MVP matrix in uniform
+		glUniformMatrix4fv(_uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
 
-void Simulate(void)
-{
-	view = glm::lookAt(
-		EyePosition,   //eye
-		EyePosition + glm::vec3(0.0, 0.0, -1.0),  //center
-		glm::vec3(0.0, 1.0, 0.0)    //up
-	);
+		//-------- DRAWING
+		// Bind PROGRAMM
+		glUseProgram(_materialProgram);
 
-	double x = sinf(glutGet(GLUT_ELAPSED_TIME) / 1000.0) / 10.0 * (2*M_PI);
-	double y = cosf(glutGet(GLUT_ELAPSED_TIME) / 1000.0) / 10.0 * (2*M_PI);
+		//---------------------------------------
+		// Bind DATA
+		glBindBuffer(GL_ARRAY_BUFFER, _vbo_cube_attrib);
 
-	Position = glm::vec3(x, y, -5);
-}
+		glEnableVertexAttribArray(_attribute_coord3d);
+		glUniform1f(_uniform_fade, 1.0f);
 
-void Timer(int value) {
-	Simulate();
-	glutPostRedisplay();
-	glutTimerFunc(12, Timer, 1);
-}
+		//--------------------------------------
+		//TODO: Use VAO here!
+		//Bind ATTRIBUTES INFO (as in VAO)
+		glVertexAttribPointer(
+			_attribute_coord3d, // attribute
+			3,                 // number of elements per vertex, here (x, y, z)
+			GL_FLOAT,          // the type of each element
+			GL_FALSE,          // take our values as-is
+			sizeof(struct attributes),
+			0
+		);
 
-//- Function for processing of screen size change event
-void onReshape(int width, int height) {
-	screen_width = width;
-	screen_height = height;
-	glViewport(0, 0, screen_width, screen_height);
-}
+		glEnableVertexAttribArray(_attribute_v_color);
+		glVertexAttribPointer(
+			_attribute_v_color, // attribute
+			3,                 // number of elements per vertex, here (r,g,b)
+			GL_FLOAT,          // the type of each element
+			GL_FALSE,          // take our values as-is
+			sizeof(struct attributes),
+			(GLvoid*) offsetof(struct attributes, v_color)  // offset of the first element
+		);
 
-//- Function for keys processing
-void Do_movement(unsigned char key, int x, int y) {
-    switch (key) {
-        case 'q':
-            exit(0);
-        break;
-        case 'r':
-          std::cout << "r" << std::endl;
-          EyePosition += glm::vec3(0.0, 0.1, 0.0);
-        break;
-        case 'f':
-          std::cout << "f" << std::endl;
-          EyePosition -= glm::vec3(0.0, 0.1, 0.0);
-        break;
-        case 'w':
-          std::cout << "w" << std::endl;
-          EyePosition += glm::vec3(0.0, 0.0, -0.1);
-        break;
-        case 's':
-            std::cout << "s" << std::endl;
-          EyePosition -= glm::vec3(0.0, 0.0, -0.1);
-        break;
-        case 'a':
-            std::cout << "a" << std::endl;
-          EyePosition += glm::vec3(-0.1, 0.0, 0.0);
-        break;
-        case 'd':
-            std::cout << "d" << std::endl;
-          EyePosition -= glm::vec3(-0.1, 0.0, 0.0);
-        break;
-    }
-}
+		//------------------- DRAW CALL
+		//Bind index array
+		glDrawElements(GL_TRIANGLES, (_iboSize/sizeof(GLushort)),
+				GL_UNSIGNED_SHORT, 0);
+
+		//------------ UNBIND ATTRIBUTES
+		glDisableVertexAttribArray(_attribute_coord3d);
+		glDisableVertexAttribArray(_attribute_v_color);
+	}
+};
 
 //=============================================================================
-int init_resources(void) {
-	// GENERATE PROGRAM
-	GLint link_ok = GL_FALSE;
+class Scene {
+private:
+	//- Types
+	//-- Scene data
+	struct ViewPortInfo {
+		int width;
+		int height;
+	};
 
-	GLuint vs, fs;
-	if ((vs = create_shader("shaders/triangle.v.glsl", GL_VERTEX_SHADER)) == 0)
-		return 0;
-	if ((fs = create_shader("shaders/triangle.f.glsl", GL_FRAGMENT_SHADER)) == 0)
-		return 0;
+	struct Camera {
+		glm::mat4 projection;
+		glm::mat4 view;
+		glm::vec3 eyePosition = glm::vec3(0.0, 0.0, 0.0);
+	};
 
-	program = glCreateProgram();
-	glAttachShader(program, vs);
-	glAttachShader(program, fs);
-	glLinkProgram(program);
-	glGetProgramiv(program, GL_LINK_STATUS, &link_ok);
-	if(link_ok == 0) {
-		fprintf(stderr, "Error while linking GLSL program");
-		print_log(program);
-		return 0;
+	//-- Model data
+	struct Model {
+		Mesh *mesh;
+
+		glm::mat4 coordinateSystem;
+		glm::mat4 mvp; // Caching matrix
+	};
+
+	//- State
+	ViewPortInfo _viewPort;
+	Camera _mainCamera;
+
+	std::vector<Mesh *> _meshes;
+	std::vector<Model *> _models;
+
+public:
+	Scene()
+		: _viewPort(), _mainCamera(), _meshes(), _models()
+	{
+		// Viewport init
+		_viewPort.width = 800;
+		_viewPort.height = 600;
+
+		// Camera init
+		_mainCamera.projection = glm::perspective(
+			45.0f,                              		//FOV
+			1.0f * _viewPort.width / _viewPort.height,	//Aspect ratio
+			0.1f,										//Near
+			10.0f										//Far
+		);
 	}
 
-	//- GET PROGRAM BINDING DATA
-	//-- Vertexes biding data
-	const char* attribute_name = "coord3d";
-	attribute_coord3d = glGetAttribLocation(program, attribute_name);
-	if (attribute_coord3d == -1) {
-		fprintf(stderr, "Could not bind attribute%s\n", attribute_name);
-		return 0;
+	void loadMeshFromFile(const char *inMeshName, const char *inFilePath) {
+		//TODO: Implement [createModelForMesh] method:
+		//1. Load vertex data from mesh file.
+		//2. Create mesh object and setup it's info from loaded data.
+		//3. .
 	}
 
-	attribute_name = "v_color";
-	attribute_v_color = glGetAttribLocation(program, attribute_name);
-	if (attribute_v_color == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_name);
-		return 0;
+	void createModelForMesh(const char *inMeshName,
+			const glm::mat4 &inCoordinateSystem)
+	{
+		//TODO: Implement [createModelForMesh] method:
+		//1. Find mesh by name.
+		//2. Create model, set its mesh from found mesh.
+		//3. Set coordiante system for model.
 	}
 
-	//-- Uniform binding data
-	//Fade data (???)
-	const char* uniform_name;
-	uniform_name = "fade";
-	uniform_fade = glGetUniformLocation(program, uniform_name);
-	if (uniform_fade == -1) {
-		fprintf(stderr, "Could not bind uniform %s\n", uniform_name);
-		return 0;
+	void draw() {
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+
+
+		for (size_t theIndex = 0, theSize = _models.size(); theIndex < theSize;
+				++theIndex)
+		{
+			Model *theModel = _models[theIndex];
+
+			//TODO: Use this data for local coordinate system
+
+//			// ANIMATION MATRIX - MOVE TO MODEL COORDINATES SYSTEM
+//			float angle_anim = glutGet(GLUT_ELAPSED_TIME) / 1000.0 * (M_PI/4);
+//			glm::vec3 axis_z(0, 0, 1);
+//			glm::vec3 axis_y(0, 1, 0);
+//			glm::vec3 axis_x(1, 0, 0);
+//			anim = glm::rotate(glm::mat4(1.0f), angle_anim, axis_x);
+//
+//			// MODEL MATRIX - SAME AS ANIM MATRIX
+//			model = glm::translate(glm::mat4(1.0f), Position);
+//			mvp = projection * view * model * anim;
+
+			//TODO: Maybe pass here coordinate system data
+			theModel->mesh->draw();
+		}
+
+		glutSwapBuffers();
 	}
-
-	//Model-view-projection matrix
-	uniform_name = "mvp";
-	uniform_mvp = glGetUniformLocation(program, uniform_name);
-	if (uniform_mvp == -1) {
-		fprintf(stderr, "Could not bind uniform %s\n", uniform_name);
-		return 0;
-	}
-
-	//GENERATE CUBE BUFFERS
-	//- Generate attributes (grouped as structure)
-	glGenBuffers(1, &vbo_cube_attrib);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_cube_attrib);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_attributes),
-			cube_attributes, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//- Generate index data
-	glGenBuffers(1, &ibo_cube_elements);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_elements);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_elements),
-			cube_elements, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	IsCreated = true;
-
-	return 1;
-}
-
-void free_resources() {
-	glDeleteProgram(program);
-}
+};
 
 //=============================================================================
-int main(int argc, char* argv[])
-{
-	DoTheImportThing(std::string("test_path.txt"));
-
+int main(int argc, char* argv[]) {
+	// CREATE WINDOW (USING GLUT)
 	glutInit(&argc, argv);
 	//	glutInitContextVersion(2,0);
 
 	glutInitDisplayMode(GLUT_RGBA|GLUT_ALPHA|GLUT_DOUBLE|GLUT_DEPTH);
-	glutInitWindowSize(screen_width, screen_height);
+	glutInitWindowSize(800, 600);
 	glutCreateWindow("Modern OpenGL");
 
-	//
+	// INITIALIZE GLEW
 	GLenum glew_status = glewInit();
 	if(glew_status != GLEW_OK) {
 		fprintf(stderr, "Error: %s\n",glewGetErrorString(glew_status));
@@ -428,21 +345,19 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// Enable alpha
+	// SETUP GL CONTEXT
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
 	//glClearColor(0.0, 0.0, 0.0, 1.0);
 
-	if(init_resources()) {
-		glutDisplayFunc(display);
-		glutReshapeFunc(onReshape);
-		glutKeyboardFunc(Do_movement);
-		glutTimerFunc(15, Timer, 1);
-		glutMainLoop();
-	}
+	// SETUP GLEW RUNLOOP CALLBACK
+	glutDisplayFunc(display);
+	glutReshapeFunc(glutCallbackOnWindowResize);
+	glutKeyboardFunc(glutCallbackOnKeyDown);
 
-	free_resources();
+	// START MAIN LOOP
+	glutMainLoop();
 
 	return EXIT_SUCCESS;
 }
