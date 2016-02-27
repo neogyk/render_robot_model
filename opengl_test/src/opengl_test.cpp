@@ -65,54 +65,27 @@ void glutCallbackOnKeyDown(unsigned char key, int x, int y) {
 //=============================================================================
 class Mesh {
 private:
-	//---------------------------------------------
-	//- Constant CPU data to send
-	//-- Attributes data. Each line contains vertex data as "structure"
-	// (really just a pair of 3D vectors) with two values.
-	struct attributes {
-		GLfloat coord3d[3];
-		GLfloat v_color[3];
-	};
 
-	attributes cube_attributes[8] = {
-		// front
-		{{-1.0, -1.0,  1.0}, {1.0 , 1.0 , 1.0 }},
-		{{ 1.0, -1.0,  1.0}, {0.25, 1.0, 0.25}},
-		{{ 1.0,  1.0,  1.0}, {1.0 , 1.0 , 1.0 }},
-		{{-1.0,  1.0,  1.0}, {1.0, 0.25, 0.25}},
-		// back
-		{{-1.0, -1.0, -1.0}, {0.25, 0.25, 0.25}},
-		{{ 1.0, -1.0, -1.0}, {1.0 , 1.0 , 1.0 }},
-		{{ 1.0,  1.0, -1.0}, {0.25, 0.25, 0.25}},
-		{{-1.0,  1.0, -1.0}, {1.0 , 1.0 , 1.0 }},
-	};
+	//- State
+	//-- DATA
+	//--- CPU data buffers
+	GLfloat *_coordinatesData;	// Coordinates
+	GLfloat *_colorData;		// Color
 
-	// Index data. Each line contains three indexes of vertex, that constructs a
-	// triangle. So, one line = one triangle
-	GLushort cube_elements[36] = {
-		/*front*/	0, 1, 2, 2, 3, 0,
-		/*top*/		3, 2, 6, 6, 7, 3,
-		/*back*/	7, 6, 5, 5, 4, 7,
-		/*bottom*/	4, 5, 1, 1, 0, 4,
-		/*left*/	4, 0, 3, 3, 7, 4,
-		/*right*/	1, 5, 6, 6, 2, 1
-	};
-	//---------------------------------------------
+	GLushort *_indexesData;		// Indexes
 
-	GLuint _materialProgram;
+	//--- GPU data handles
+	GLuint _coordinatesGLID;	// Coordinates
+	GLuint _colorGLID;			// Color
 
-	//Shader attributes location
-	GLint _attribute_coord3d;
-	GLint _attribute_v_color;
+	GLuint _indexesGLID;		// Indexes
 
-	//-- Frade (alpha) for the Cube
-	GLint _uniform_fade;
-	GLint _uniform_mvp;
+	//-- CODE
+	//--- GPU data handles
+	GLuint _vertexShaderGLID;
+	GLuint _fragmentShaderGLID;
 
-	GLuint _vbo_cube_attrib;
-	GLuint _ibo_cube_elements;
-
-	GLuint _iboSize;
+	GLuint _shaderProgramGLID;
 
 	//- Methods
 	//-- Private methods
@@ -148,20 +121,74 @@ private:
 		return theBufferID;
 	}
 
-	void initModel(const char *inVertexShaderFile,
-			const char *inFragmentShaderFile)
+	//--- Small helpers
+	void setVector(GLfloat *inVectorsBuffer, size_t inVectorIndex,
+			GLfloat inX, GLfloat inY, GLfloat inZ)
 	{
+		inVectorsBuffer[inVectorIndex * 3 + 0] = inX;
+		inVectorsBuffer[inVectorIndex * 3 + 1] = inY;
+		inVectorsBuffer[inVectorIndex * 3 + 2] = inZ;
+	}
 
+	void setIndexBlock(GLushort *inVectorsBuffer, size_t inVectorIndex,
+			GLushort in0, GLushort in1, GLushort in2,
+			GLushort in3, GLushort in4, GLushort in5)
+	{
+		inVectorsBuffer[inVectorIndex * 6 + 0] = in0;
+		inVectorsBuffer[inVectorIndex * 6 + 1] = in1;
+		inVectorsBuffer[inVectorIndex * 6 + 2] = in2;
+		inVectorsBuffer[inVectorIndex * 6 + 3] = in3;
+		inVectorsBuffer[inVectorIndex * 6 + 4] = in4;
+		inVectorsBuffer[inVectorIndex * 6 + 5] = in5;
 	}
 
 public:
 	Mesh(const char *inModelFile) {
-		const char *theVertexShaderPath = "shaders/triangle.v.glsl";
-		const char *theFragmentShaderPath = "shaders/triangle.f.glsl";
+		// Create vertex buffers data
+		_coordinatesData = new GLfloat[8 * 3];
+		setVector(_coordinatesData, 0, -1.0, -1.0,  1.0);
+		setVector(_coordinatesData, 0, 1.0, -1.0,  1.0);
+		setVector(_coordinatesData, 0, 1.0,  1.0,  1.0);
+		setVector(_coordinatesData, 0, -1.0,  1.0,  1.0);
+
+		setVector(_coordinatesData, 0, -1.0, -1.0, -1.0);
+		setVector(_coordinatesData, 0, 1.0, -1.0, -1.0);
+		setVector(_coordinatesData, 0, 1.0,  1.0, -1.0);
+		setVector(_coordinatesData, 0, -1.0,  1.0, -1.0);
+
+		_colorData = new GLfloat[8 * 3];
+		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
+		setVector(_colorData, 0, 0.25, 1.0, 0.25);
+		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
+		setVector(_colorData, 0, 1.0, 0.25, 0.25);
+
+		setVector(_colorData, 0, 0.25, 0.25, 0.25);
+		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
+		setVector(_colorData, 0, 0.25, 0.25, 0.25);
+		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
+
+		_indexesData = new GLushort[36];
+		setIndexBlock(_indexesData, 0, 0, 1, 2, 2, 3, 0);
+		setIndexBlock(_indexesData, 1, 3, 2, 6, 6, 7, 3);
+		setIndexBlock(_indexesData, 2, 7, 6, 5, 5, 4, 7);
+		setIndexBlock(_indexesData, 3, 4, 5, 1, 1, 0, 4);
+		setIndexBlock(_indexesData, 4, 4, 0, 3, 3, 7, 4);
+		setIndexBlock(_indexesData, 5, 1, 5, 6, 6, 2, 1);
+
+		// Create buffers
+		_coordinatesGLID = createBuffer(GL_ARRAY_BUFFER,
+				_coordinatesData, 8 * 3 * sizeof(GLfloat));
+
+		_colorGLID = createBuffer(GL_ARRAY_BUFFER,
+				_colorData, 8 * 3 * sizeof(GLfloat));
+
+		_indexesGLID = createBuffer(GL_ELEMENT_ARRAY_BUFFER,
+				_indexesData, 8 * 3 * sizeof(GLfloat));
 
 		// Create program
-		_materialProgram =
-				createShaderProgram(theVertexShaderPath, theFragmentShaderPath);
+		_shaderProgramGLID = createShaderProgram(
+				"shaders/triangle.v.glsl", "shaders/triangle.f.glsl",
+				_vertexShaderGLID, _fragmentShaderGLID);
 
 		// Get program binding points
 		_attribute_coord3d = getAttributeLocation(_materialProgram, "coord3d");
@@ -169,12 +196,6 @@ public:
 
 		_uniform_fade = getUniformLocation(_materialProgram, "fade");
 		_uniform_mvp = getUniformLocation(_materialProgram, "mvp");
-
-		// Create buffers
-		_vbo_cube_attrib = createBuffer(GL_ARRAY_BUFFER,
-				cube_attributes, sizeof(cube_attributes));
-		_ibo_cube_elements = createBuffer(GL_ELEMENT_ARRAY_BUFFER,
-				cube_elements, sizeof(cube_elements));
 	}
 
 	virtual ~Mesh() {
@@ -254,6 +275,12 @@ private:
 	};
 
 	//- State
+
+	//-- Frade (alpha) for the Cube
+	GLint _uniform_fade;
+	GLint _uniform_mvp;
+
+
 	ViewPortInfo _viewPort;
 	Camera _mainCamera;
 

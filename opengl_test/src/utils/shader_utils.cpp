@@ -100,26 +100,27 @@ GLuint createShader(const char* filename, GLenum type) {
 }
 
 GLuint createShaderProgram(const char *inVertexShaderFile,
-		const char *inFragmentShaderFile)
+		const char *inFragmentShaderFile,
+		GLuint &outVertexShaderID, GLuint &outFragmentShaderID)
 {
-	GLuint theVertexShaderID =
+	outVertexShaderID =
 			createShader(inVertexShaderFile, GL_VERTEX_SHADER);
-	if (theVertexShaderID == 0) return 0;
+	if (outVertexShaderID == 0) return 0;
 
-	GLuint theFragmentShaderID =
+	outFragmentShaderID =
 			createShader(inFragmentShaderFile, GL_FRAGMENT_SHADER);
-	if (theFragmentShaderID == 0) return 0;
+	if (outFragmentShaderID == 0) return 0;
 
 	GLint theProgramID = glCreateProgram();
-	glAttachShader(theProgramID, theVertexShaderID);
-	glAttachShader(theProgramID, theFragmentShaderID);
+	glAttachShader(theProgramID, outVertexShaderID);
+	glAttachShader(theProgramID, outFragmentShaderID);
 	glLinkProgram(theProgramID);
 
 	GLint theLinkingSuccess = GL_FALSE;
 	glGetProgramiv(theProgramID, GL_LINK_STATUS, &theLinkingSuccess);
 	if(theLinkingSuccess == 0) {
 		fprintf(stderr, "Error while linking GLSL program");
-		print_log(theProgram);
+		print_log(theProgramID);
 		return 0;
 	}
 
