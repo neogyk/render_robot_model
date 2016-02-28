@@ -44,9 +44,218 @@ Comment:  од чесно скопирован с того самого учебника на wikibooks
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
+// GL Utils
+//TODO: Place utils near "createShader" method and so on
+////////////////////////////////////////////////////////////////////////////////
+GLuint getAttributeLocation(GLint inProgram, const char *inAttributeName) {
+	GLuint theAttributeLocationID =
+			glGetAttribLocation(inProgram, inAttributeName);
+	if (glGetError() != GL_NO_ERROR) {
+		std::cout << "Could not bind attribute [" << inAttributeName << "]"
+				<< std::endl;
+		return -1;
+	}
+	return theAttributeLocationID;
+}
+
+GLuint getUniformLocation(GLint inProgram, const char *inAttributeName) {
+	GLuint theAttributeLocationID =
+			glGetUniformLocation(inProgram, inAttributeName);
+	if (glGetError() != GL_NO_ERROR) {
+		std::cout << "Could not bind attribute [" << inAttributeName << "]"
+				<< std::endl;
+		return GLuint(-1);
+	}
+	return theAttributeLocationID;
+}
+
+GLuint createBuffer(GLenum inTarget, const GLvoid *inData, GLsizeiptr inSize) {
+	GLuint theBufferID;
+	glGenBuffers(1, &theBufferID);
+	glBindBuffer(inTarget, theBufferID);
+	glBufferData(inTarget, inSize, inData, GL_STATIC_DRAW);
+	glBindBuffer(inTarget, 0);
+
+	return theBufferID;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//Maybe usefull for coordinate system drawer
+//// Create coordinates buffer
+//GLfloat *theCoordinates = new GLfloat[9];
+//
+//glm::vec4 theVector;
+//
+//theVector = _matrix * glm::vec4(1.f, 0.f, 0.f, 1.f);
+//theCoordinates[0] = theVector.x;
+//theCoordinates[1] = theVector.y;
+//theCoordinates[2] = theVector.z;
+//
+//theVector = _matrix * glm::vec4(0.f, 1.f, 0.f, 1.f);
+//theCoordinates[3] = theVector.x;
+//theCoordinates[4] = theVector.y;
+//theCoordinates[5] = theVector.z;
+//
+//theVector = _matrix * glm::vec4(0.f, 0.f, 1.f, 1.f);
+//theCoordinates[6] = theVector.x;
+//theCoordinates[7] = theVector.y;
+//theCoordinates[8] = theVector.z;
+//
+//// Create colors buffer
+//GLfloat *theColors = new GLfloat[9];
+//theColors[0] = 1.f;
+//theColors[1] = 0.f;
+//theColors[2] = 0.f;
+
+////////////////////////////////////////////////////////////////////////////////
+class LineServer {
+private:
+	//- State
+	//-- DATA
+	//--- GPU data handles
+	GLuint _coordinatesGLID;	// Coordinates
+	GLuint _colorGLID;			// Color
+
+	GLuint _dataVAOGLID;		// Data VAO
+
+	//-- CODE
+	//--- GPU data handles
+	GLuint _vertexShaderGLID;
+	GLuint _fragmentShaderGLID;
+
+	GLuint _shaderProgramGLID;
+
+	//-- DRAW BINDING
+	GLuint _mvpUniformBindingGLID;
+
+	//- Methods
+	void internal_setMatrix(const glm::mat4 &inMatrix) {
+	}
+
+public:
+	//- Methods
+	//-- Memory lifecycle
+	LineServer() {
+//		_name = inMesh->mName.data;
+//
+//		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//		// Create vertex buffers data
+//		_vertexCount = inMesh->mNumVertices;
+//		aiVector3D *theVertexes = inMesh->mVertices;
+//
+//		_coordinatesData = new GLfloat[_vertexCount * 3];
+//		_colorData = new GLfloat[_vertexCount * 3];
+//
+//		for(unsigned int i = 0; i < _vertexCount; ++i) {
+//			_coordinatesData[i*3 + 0] = theVertexes[i].x;
+//			_coordinatesData[i*3 + 1] = theVertexes[i].y;
+//			_coordinatesData[i*3 + 2] = theVertexes[i].z;
+//
+//			_colorData[i*3 + 0] = ((float)rand()) / RAND_MAX;
+//			_colorData[i*3 + 1] = ((float)rand()) / RAND_MAX;
+//			_colorData[i*3 + 2] = ((float)rand()) / RAND_MAX;
+//		}
+//
+//		// Create index array
+//		unsigned int theFacesCount = inMesh->mNumFaces;
+//		_indexCount = theFacesCount * 3;
+//
+//		aiFace *theFaces = inMesh->mFaces;
+//
+//		_indexesData = new GLushort[_indexCount];
+//
+//		for(unsigned int i = 0; i < theFacesCount; i++) {
+//			//TODO: Create verify if face has not three indexes
+//			// (inMesh->mNumIndices)
+//			aiFace face = theFaces[i];
+//
+//			_indexesData[i*3 + 0] = face.mIndices[0];
+//			_indexesData[i*3 + 1] = face.mIndices[1];
+//			_indexesData[i*3 + 2] = face.mIndices[2];
+//		}
+//
+//		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//		// Create buffers
+//		_coordinatesGLID = createBuffer(GL_ARRAY_BUFFER,
+//				_coordinatesData, _vertexCount * 3 * sizeof(GLfloat));
+//
+//		_colorGLID = createBuffer(GL_ARRAY_BUFFER,
+//				_colorData, _vertexCount * 3 * sizeof(GLfloat));
+//
+//		_indexesGLID = createBuffer(GL_ELEMENT_ARRAY_BUFFER,
+//				_indexesData, _indexCount * sizeof(GLushort));
+//
+//		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//		// Create program
+//		_shaderProgramGLID = createShaderProgram(
+//				"shaders/triangle.v.glsl", "shaders/triangle.f.glsl",
+//				_vertexShaderGLID, _fragmentShaderGLID);
+//
+//		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//		// Generate VAO
+//		glGenVertexArrays(1, &_dataVAOGLID);
+//		glBindVertexArray(_dataVAOGLID);
+//
+//		GLuint theLocation;
+//
+//		theLocation = getAttributeLocation(_shaderProgramGLID, "coord3d");
+//		glBindBuffer(GL_ARRAY_BUFFER, _coordinatesGLID);
+//		glEnableVertexAttribArray(theLocation);
+//		glVertexAttribPointer(
+//		/*index */		theLocation,
+//		/*size */		(GLint)3,
+//		/*type */		(GLenum)GL_FLOAT,
+//		/*normalized */	(GLboolean)GL_FALSE,
+//		/*stride */		(GLsizei)0,
+//		/*offset */		(const GLvoid*)0
+//		);
+//
+//		theLocation = getAttributeLocation(_shaderProgramGLID, "v_color");
+//		glBindBuffer(GL_ARRAY_BUFFER, _colorGLID);
+//		glEnableVertexAttribArray(theLocation);
+//		glVertexAttribPointer(
+//		/*index */		theLocation,
+//		/*size */		(GLint)3,
+//		/*type */		(GLenum)GL_FLOAT,
+//		/*normalized */	(GLboolean)GL_FALSE,
+//		/*stride */		(GLsizei)0,
+//		/*offset */		(const GLvoid*)0
+//		);
+//
+//		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//		// Create program
+//		_mvpUniformBindingGLID = getUniformLocation(_shaderProgramGLID, "mvp");
+	}
+
+	virtual ~LineServer() {
+//		glDeleteBuffers(1, &_coordinatesGLID);
+//		glDeleteBuffers(1, &_colorGLID);
+//
+//		glDeleteBuffers(1, &_indexesGLID);
+//
+//		//TODO: Maybe, remove shader program too
+//		glDeleteProgram(_shaderProgramGLID);
+//
+//		glDeleteVertexArrays(1, &_dataVAOGLID);
+	}
+
+	void addLine(const glm::vec3 &inFrom, const glm::vec3 &inTo,
+			const glm::vec3 &inColor, float inLifeTime)
+	{
+		//1. Create some structure
+	}
+
+
+	//-- Drawing workflow
+	void draw(const glm::mat4 &inProjection, const glm::mat4 &inView,
+			const glm::mat4 &inModel)
+	{
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////
 class Mesh {
 private:
-
 	//- State
 	std::string _name;
 
@@ -77,44 +286,8 @@ private:
 	//-- DRAW BINDING
 	GLuint _mvpUniformBindingGLID;
 
-	//- Methods
-	//-- Private methods
-	GLuint getAttributeLocation(GLint inProgram, const char *inAttributeName) {
-		GLuint theAttributeLocationID =
-				glGetAttribLocation(inProgram, inAttributeName);
-		if (glGetError() != GL_NO_ERROR) {
-			std::cout << "Could not bind attribute [" << inAttributeName << "]"
-					<< std::endl;
-			return -1;
-		}
-		return theAttributeLocationID;
-	}
-
-	GLuint getUniformLocation(GLint inProgram, const char *inAttributeName) {
-		GLuint theAttributeLocationID =
-				glGetUniformLocation(inProgram, inAttributeName);
-		if (glGetError() != GL_NO_ERROR) {
-			std::cout << "Could not bind attribute [" << inAttributeName << "]"
-					<< std::endl;
-			return GLuint(-1);
-		}
-		return theAttributeLocationID;
-	}
-
-	GLuint createBuffer(GLenum inTarget, const GLvoid *inData,
-			GLsizeiptr inSize)
-	{
-		GLuint theBufferID;
-		glGenBuffers(1, &theBufferID);
-		glBindBuffer(inTarget, theBufferID);
-		glBufferData(inTarget, inSize, inData, GL_STATIC_DRAW);
-		glBindBuffer(inTarget, 0);
-
-		return theBufferID;
-	}
-
 public:
-
+	//- Methods
 	//-- Memory lifecycle
 	Mesh(aiMesh *inMesh) {
 		_name = inMesh->mName.data;
@@ -242,6 +415,7 @@ public:
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesGLID);
 
+		//TODO: Try to use here GL_LINES - you'll see how to draw lines
 		glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_SHORT, 0);
 
 		glBindVertexArray(0);
