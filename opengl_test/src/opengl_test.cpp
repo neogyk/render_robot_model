@@ -48,12 +48,16 @@ class Mesh {
 private:
 
 	//- State
+	std::string _name;
+
 	//-- DATA
 	//--- CPU data buffers
 	GLfloat *_coordinatesData;	// Coordinates
 	GLfloat *_colorData;		// Color
+	GLint _vertexCount;
 
 	GLushort *_indexesData;		// Indexes
+	GLint _indexCount;
 
 	//--- GPU data handles
 	GLuint _coordinatesGLID;	// Coordinates
@@ -109,72 +113,58 @@ private:
 		return theBufferID;
 	}
 
-	//--- Small helpers
-	void setVector(GLfloat *inVectorsBuffer, size_t inVectorIndex,
-			GLfloat inX, GLfloat inY, GLfloat inZ)
-	{
-		inVectorsBuffer[inVectorIndex * 3 + 0] = inX;
-		inVectorsBuffer[inVectorIndex * 3 + 1] = inY;
-		inVectorsBuffer[inVectorIndex * 3 + 2] = inZ;
-	}
-
-	void setIndexBlock(GLushort *inVectorsBuffer, size_t inVectorIndex,
-			GLushort in0, GLushort in1, GLushort in2,
-			GLushort in3, GLushort in4, GLushort in5)
-	{
-		inVectorsBuffer[inVectorIndex * 6 + 0] = in0;
-		inVectorsBuffer[inVectorIndex * 6 + 1] = in1;
-		inVectorsBuffer[inVectorIndex * 6 + 2] = in2;
-		inVectorsBuffer[inVectorIndex * 6 + 3] = in3;
-		inVectorsBuffer[inVectorIndex * 6 + 4] = in4;
-		inVectorsBuffer[inVectorIndex * 6 + 5] = in5;
-	}
-
 public:
-	Mesh(const char *inModelFile) {
+
+	//-- Memory lifecycle
+	Mesh(aiMesh *inMesh) {
+		_name = inMesh->mName.data;
 
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		// Create vertex buffers data
-		_coordinatesData = new GLfloat[8 * 3];
-		setVector(_coordinatesData, 0, -1.0, -1.0,  1.0);
-		setVector(_coordinatesData, 1, 1.0, -1.0,  1.0);
-		setVector(_coordinatesData, 2, 1.0,  1.0,  1.0);
-		setVector(_coordinatesData, 3, -1.0,  1.0,  1.0);
+		_vertexCount = inMesh->mNumVertices;
+		aiVector3D *theVertexes = inMesh->mVertices;
 
-		setVector(_coordinatesData, 4, -1.0, -1.0, -1.0);
-		setVector(_coordinatesData, 5, 1.0, -1.0, -1.0);
-		setVector(_coordinatesData, 6, 1.0,  1.0, -1.0);
-		setVector(_coordinatesData, 7, -1.0,  1.0, -1.0);
+		_coordinatesData = new GLfloat[_vertexCount * 3];
+		_colorData = new GLfloat[_vertexCount * 3];
 
-		_colorData = new GLfloat[8 * 3];
-		setVector(_colorData, 0, 1.0 , 1.0 , 1.0);
-		setVector(_colorData, 1, 0.25, 1.0, 0.25);
-		setVector(_colorData, 2, 1.0 , 1.0 , 1.0);
-		setVector(_colorData, 3, 1.0, 0.25, 0.25);
+		for(unsigned int i = 0; i < _vertexCount; ++i) {
+			_coordinatesData[i*3 + 0] = theVertexes[i].x;
+			_coordinatesData[i*3 + 1] = theVertexes[i].y;
+			_coordinatesData[i*3 + 2] = theVertexes[i].z;
 
-		setVector(_colorData, 4, 0.25, 0.25, 0.25);
-		setVector(_colorData, 5, 1.0 , 1.0 , 1.0);
-		setVector(_colorData, 6, 0.25, 0.25, 0.25);
-		setVector(_colorData, 7, 1.0 , 1.0 , 1.0);
+			_colorData[i*3 + 0] = ((float)rand()) / RAND_MAX;
+			_colorData[i*3 + 1] = ((float)rand()) / RAND_MAX;
+			_colorData[i*3 + 2] = ((float)rand()) / RAND_MAX;
+		}
 
-		_indexesData = new GLushort[36];
-		setIndexBlock(_indexesData, 0, 0, 1, 2, 2, 3, 0);
-		setIndexBlock(_indexesData, 1, 3, 2, 6, 6, 7, 3);
-		setIndexBlock(_indexesData, 2, 7, 6, 5, 5, 4, 7);
-		setIndexBlock(_indexesData, 3, 4, 5, 1, 1, 0, 4);
-		setIndexBlock(_indexesData, 4, 4, 0, 3, 3, 7, 4);
-		setIndexBlock(_indexesData, 5, 1, 5, 6, 6, 2, 1);
+		// Create index array
+		unsigned int theFacesCount = inMesh->mNumFaces;
+		_indexCount = theFacesCount * 3;
+
+		aiFace *theFaces = inMesh->mFaces;
+
+		_indexesData = new GLushort[_indexCount];
+
+		for(unsigned int i = 0; i < theFacesCount; i++) {
+			//TODO: Create verify if face has not three indexes
+			// (inMesh->mNumIndices)
+			aiFace face = theFaces[i];
+
+			_indexesData[i*3 + 0] = face.mIndices[0];
+			_indexesData[i*3 + 1] = face.mIndices[1];
+			_indexesData[i*3 + 2] = face.mIndices[2];
+		}
 
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		// Create buffers
 		_coordinatesGLID = createBuffer(GL_ARRAY_BUFFER,
-				_coordinatesData, 8 * 3 * sizeof(GLfloat));
+				_coordinatesData, _vertexCount * 3 * sizeof(GLfloat));
 
 		_colorGLID = createBuffer(GL_ARRAY_BUFFER,
-				_colorData, 8 * 3 * sizeof(GLfloat));
+				_colorData, _vertexCount * 3 * sizeof(GLfloat));
 
 		_indexesGLID = createBuffer(GL_ELEMENT_ARRAY_BUFFER,
-				_indexesData, 36 * sizeof(GLushort));
+				_indexesData, _indexCount * sizeof(GLushort));
 
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		// Create program
@@ -230,6 +220,10 @@ public:
 		glDeleteVertexArrays(1, &_dataVAOGLID);
 	}
 
+	//-- Registering
+	const std::string &name() { return _name; }
+
+	//-- Drawing workflow
 	void draw(const glm::mat4 &inProjection, const glm::mat4 &inView,
 			const glm::mat4 &inModel)
 	{
@@ -248,7 +242,7 @@ public:
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesGLID);
 
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
+		glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_SHORT, 0);
 
 		glBindVertexArray(0);
 	}
@@ -284,6 +278,20 @@ private:
 	std::vector<Mesh *> _meshes;
 	std::vector<Model *> _models;
 
+	//- Methods
+	//-- Meshes loading
+	void processNode(aiNode *inAssimpNode, const aiScene *inAssimpScene){
+		for(unsigned int i = 0; i < inAssimpNode->mNumMeshes; ++i) {
+			// Bind mesh
+			//TODO: Process hierarchical meshes
+			_meshes.push_back(
+					new Mesh(inAssimpScene->mMeshes[inAssimpNode->mMeshes[i]]));
+		}
+		for(unsigned int i = 0; i < inAssimpNode->mNumChildren; ++i) {
+			processNode(inAssimpNode->mChildren[i], inAssimpScene);
+		}
+	}
+
 public:
 	Scene()
 		: _viewPort(), _mainCamera(), _meshes(), _models()
@@ -308,18 +316,34 @@ public:
 		);
 	}
 
-	void loadMeshFromFile(const char *inMeshName, const char *inFilePath) {
-		_meshes.push_back(new Mesh(inFilePath));
+	bool loadMeshesFromFile(const char *inFilePath) {
+		Assimp::Importer theImporter;
+		const aiScene *theScene = theImporter.ReadFile(inFilePath,
+				aiProcess_CalcTangentSpace       |
+				aiProcess_Triangulate            |
+				aiProcess_JoinIdenticalVertices  |
+				aiProcess_SortByPType);
+
+		if(!theScene) return false;
+		processNode(theScene->mRootNode, theScene);
+
+		return true;
 	}
 
 	void createModelForMesh(const char *inMeshName,
 			const glm::mat4 &inCoordinateSystem)
 	{
-		Model *theModel = new Model();
-		theModel->coordinateSystem = inCoordinateSystem;
-		theModel->mesh = _meshes[0];
+		for (unsigned int i = 0, size = _meshes.size(); i < size; ++i) {
+			if (_meshes[i]->name() == inMeshName) {
+				Model *theModel = new Model();
+				theModel->coordinateSystem = inCoordinateSystem;
+				theModel->mesh = _meshes[i];
+				_models.push_back(theModel);
 
-		_models.push_back(theModel);
+				return;
+			}
+		}
+		std::cout << "CANNOT FIND THE MESH" << std::endl;
 	}
 
 	void draw() {
@@ -399,11 +423,11 @@ int main(int argc, char* argv[]) {
 	glEnable(GL_DEPTH_TEST);
 
 	gScene = new Scene();
-	gScene->loadMeshFromFile("test_mesh", "...");
+	gScene->loadMeshesFromFile("Assets.dxf");
 
 	double x = sinf(glutGet(GLUT_ELAPSED_TIME) / 1000.0) / 10.0 * (2*M_PI);
 	double y = cosf(glutGet(GLUT_ELAPSED_TIME) / 1000.0) / 10.0 * (2*M_PI);
-	gScene->createModelForMesh("test_mesh",
+	gScene->createModelForMesh("0",
 			glm::translate(glm::mat4(1.0f), glm::vec3(x, y, -5)));
 
 	// Setup GLEW runloop callback
